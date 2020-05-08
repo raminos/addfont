@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# The goal of this script is to take a directory and install
+# all the fonts inside.
+# On top of this the script should be able to do this silently
+# or verbose.
+
