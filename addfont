@@ -4,4 +4,43 @@
 # all the fonts inside.
 # On top of this the script should be able to do this silently
 # or verbose.
+#
+# Syntax should look like this in the end:
+# addfont [flags] directory
+destination=$1
+name=$(basename $destination)
+
+
+extract_to_user() {
+    case $destination in
+        # Creates a folder on our level that we need to delete in
+        # the end.
+        *.tar|*.tgz) tar -xzvf "$destination";;
+        *.gzip) gunzip -k "$destination";;
+        *.zip) unzip "$destination";;
+    esac
+    
+    destination="$PWD/$name"
+    return $folder_name
+}
+
+move_to_user() {
+    mv $destination $PWD
+    destination="$PWD/$name"
+}
+
+if [[ -d $1 ]]; then
+    echo "I found a directory!"
+    type='directory'
+    move_to_user
+elif [[ -f $1 ]]; then
+    echo "I found a file!"
+    type='file'
+    extract_to_user
+else 
+    echo "The path you entered is not valid: $1"
+fi
+
+echo $destination
+echo $name
 
