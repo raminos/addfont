@@ -10,7 +10,7 @@ set -xv
 # Syntax should look like this in the end:
 # addfont [flags] directory
 current_path="$1"
-name=$(basename $current_path)
+name=$(basename "$current_path")
 original_type='' # Possible original_types: archive, directory, file
 supported_formats=('ttf' 'otf') # TODO: Add woff
 font_formats=('ttf' 'otf' 'woff')
@@ -47,18 +47,18 @@ is_font() {
 
 add_font() {
     local font_directory=~/Library/Fonts/
-    local file_name=$(basename $1)
+    local file_name=$(basename "$1")
     local font_name="${file_name%.*}"
     local font_format="${file_name##*.}"
-    if [[ $font_format = 'woff' ]]; then
+    if [[ "$font_format" = 'woff' ]]; then
         if ! is_command woff2sfnt-zopfli; then
             install_woff_converter
         fi
         local font_in_ttf="$font_name.ttf"
-        woff2sfnt-zopfli $1 >> $font_in_ttf
-        mv $font_in_ttf $font_directory
+        woff2sfnt-zopfli "$1" >> "$font_in_ttf"
+        mv "$font_in_ttf" "$font_directory"
     else
-        cp -n $1 $font_directory
+        cp -n "$1" "$font_directory"
         if [[ $? -eq 0 ]]; then
             echo "Successfully installed $file_name."
         else
@@ -70,21 +70,21 @@ add_font() {
 add_fonts() {
     find_fonts_in_directory | while read font
     do
-        add_font $font
+        add_font "$font"
     done
 }
 
 clean_up() {
-    [[ $original_type = 'archive' ]] &&  rm -rf $current_path
+    [[ "$original_type" = 'archive' ]] &&  rm -rf "$current_path"
 }
 
 find_fonts_in_directory() {
-    find $current_path -type f \( -iname "*.[ot]tf" -o -iname "*.woff" \)
+    find "$current_path" -type f \( -iname "*.[ot]tf" -o -iname "*.woff" \)
 }
 
 extract_from_archive() {
     # Creates a folder that we need to delete in the end.
-    case $current_path in
+    case "$current_path" in
         *.tar|*.tgz) tar -xzf "$current_path";;
         *.gzip) gunzip -k "$current_path";;
         *.zip) unzip -qq "$current_path";;
@@ -93,17 +93,17 @@ extract_from_archive() {
     name="${name%.*}"
     current_path="$PWD/$name"
     original_type='archive'
-    main $current_path
+    main "$current_path"
     # TODO: Find a better way to get the returned file/directory's path
     #       This right now only works for directories
 }
 
 main() {
     if [[ -d "$1" ]]; then
-        [[ -z $original_type ]] && original_type='directory' 
+        [[ -z "$original_type" ]] && original_type='directory' 
     elif [[ -f "$1" ]]; then
         if is_font; then
-            add_font $current_path
+            add_font "$current_path"
             exit 0
         else
             extract_from_archive
@@ -117,5 +117,5 @@ main() {
     clean_up
 }
 
-main $1 
+main "$current_path" 
 
