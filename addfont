@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -xv
 # The goal of this script is to take a directory and install
 # all the fonts inside.
 # On top of this the script should be able to do this silently
@@ -7,40 +8,76 @@
 #
 # Syntax should look like this in the end:
 # addfont [flags] directory
-destination=$1
+
+destination="$1"
 name=$(basename $destination)
+type='' # Possible types: archive, directory, file
+supported_formats=('.ttf' '.otf')
 
+is_single_file() {
+    for format in "${supported_formats[@]}"; do
+        [[ $format = $file_ending ]] && return 1
+    done
+    return 0
+}
 
-extract_to_user() {
+add_single_file() {
+    cp $destination ~/Library/Fonts/
+    echo 'Successfully added font'
+}
+
+clean_up() {
+    [[ $type -eq 'archive' ]] &&  rm -rf $destination
+}
+
+add_directory() {
+    echo "Finding fonts in $name"
+    echo "-------"
+    find $destination -iname "*.[ot]tf" \
+        -exec bash -c 'echo "adding $(basename {})"' \; \
+        -exec cp '{}' ~/Library/Fonts/ \;
+    echo "-------"
+    # clean_up
+    echo "All fonts from the directory have been added!"
+}
+
+extract_archive_to_user() {
     case $destination in
-        # Creates a folder on our level that we need to delete in
-        # the end.
-        *.tar|*.tgz) tar -xzvf "$destination";;
+        # Creates a folder on that we need to delete in the end.
+        *.tar|*.tgz) tar -xzf "$destination";;
         *.gzip) gunzip -k "$destination";;
-        *.zip) unzip "$destination";;
+        *.zip) unzip -qq "$destination";;
     esac
     
+    name="${name%.*}"
     destination="$PWD/$name"
-    return $folder_name
+    type='archive'
 }
 
-move_to_user() {
-    mv $destination $PWD
+move_directory_to_user() {
+    # move target folder in user's current directory to work with
+    # it more easily.
+    local folder_directory=$(dirname $destination)
+    [[ $folder_directory -ef $PWD ]] || mv $destination $PWD
     destination="$PWD/$name"
-}
-
-if [[ -d $1 ]]; then
-    echo "I found a directory!"
     type='directory'
-    move_to_user
-elif [[ -f $1 ]]; then
-    echo "I found a file!"
-    type='file'
-    extract_to_user
-else 
-    echo "The path you entered is not valid: $1"
-fi
+}
 
-echo $destination
-echo $name
+process_path() {
+    if [[ -d $1 ]]; then
+        move_directory_to_user
+        add_directory
+    elif [[ -f $1 ]]; then
+        if [[ is_single_file -eq 1 ]]; then
+            add_single_file
+        else
+            extract_archive_to_user
+            add_directory
+        fi
+    else 
+        echo "The path you entered is not valid: $1"
+    fi
+}
+
+process_path $1 
 
