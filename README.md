@@ -4,7 +4,7 @@ This script serves to automate the installation of downloaded fonts
 
 ## TODO
 
-- [ ] Add ability to install .woff fonts
+- [x] Add ability to install .woff fonts
 - [ ] Add verbose flag which shows the adding process
 - [ ] Add delete flag which removes the original file after adding
 - [ ] Refactor extract function
