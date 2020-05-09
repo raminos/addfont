@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -xv
 # The goal of this script is to take a directory and install
 # all the fonts inside.
 # On top of this the script should be able to do this silently
@@ -12,6 +13,7 @@ current_path="$1"
 name=$(basename $current_path)
 original_type='' # Possible original_types: archive, directory, file
 supported_formats=('ttf' 'otf') # TODO: Add woff
+font_formats=('ttf' 'otf' 'woff')
 
 is_command() {
     command -v "$1" >/dev/null
@@ -25,11 +27,16 @@ install_woff_converter() {
     mv woff2sfnt-zopfli sfnt2woff-zopfli /usr/local/bin &&
     cd .. &&
     rm -rf ./woff
+
+    if ! is_command woff2sfnt-zopfli; then
+        echo "Couldn't install woff converter"
+        exit 126
+    fi
 }
 
 is_font() {
     local file_format="${name##*.}"
-    for supported_format in "${supported_formats[@]}"; do
+    for supported_format in "${font_formats[@]}"; do
         if [[ $supported_format = $file_format ]]; then
             original_type='file'
             return 0
@@ -39,11 +46,24 @@ is_font() {
 }
 
 add_font() {
-    cp -n $1 ~/Library/Fonts/
-    if [[ $? -eq 0 ]]; then
-        echo "Successfully installed $(basename $1)."
+    local font_directory=~/Library/Fonts/
+    local file_name=$(basename $1)
+    local font_name="${file_name%.*}"
+    local font_format="${file_name##*.}"
+    if [[ $font_format = 'woff' ]]; then
+        if ! is_command woff2sfnt-zopfli; then
+            install_woff_converter
+        fi
+        local font_in_ttf="$font_name.ttf"
+        woff2sfnt-zopfli $1 >> $font_in_ttf
+        mv $font_in_ttf $font_directory
     else
-        echo "$(basename $1) is already installed."
+        cp -n $1 $font_directory
+        if [[ $? -eq 0 ]]; then
+            echo "Successfully installed $file_name."
+        else
+            echo "$file_name is already installed."
+        fi
     fi
 }
 
@@ -59,7 +79,7 @@ clean_up() {
 }
 
 find_fonts_in_directory() {
-    find $current_path -iname "*.[ot]tf"
+    find $current_path -type f \( -iname "*.[ot]tf" -o -iname "*.woff" \)
 }
 
 extract_from_archive() {
