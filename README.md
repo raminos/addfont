@@ -2,6 +2,8 @@
 
 This script serves to automate the installation of downloaded fonts
 
+**Syntax**: `addfont [flags] directory`
+
 ## TODO
 
 - [x] Add ability to install .woff fonts
@@ -12,3 +14,5 @@ This script serves to automate the installation of downloaded fonts
 - [ ] Add count of installed fonts
 - [ ] Add message in case font is already installed
 - [ ] Fix error when using a file with space in filename as a path
+- [ ] Add check for git and homebrew (in case git needs to be added)
+
